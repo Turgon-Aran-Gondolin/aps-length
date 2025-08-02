@@ -331,9 +331,9 @@ def count_main_text_words_wordcount(tex_lines, opts):
     os.system(r'echo tmp_tex_file.tex | %s wordcount.tex > /dev/null 2>&1' % opts.latex)
     wordcount_log = open('wordcount.log', encoding="latin-1").readlines()
 
-    rm_files = glob.glob('wordcount*') + glob.glob('tmp_tex_file*')
-    for file in rm_files:
-        os.unlink(file)
+    # rm_files = glob.glob('wordcount*') + glob.glob('tmp_tex_file*')
+    # for file in rm_files:
+    #     os.unlink(file)
 
     wordcount = len([line for line in wordcount_log if '3.08633' in line or '3.08635' in line])
     return wordcount
@@ -420,8 +420,9 @@ def count_figures_words(detex_lines, tex_lines, opts):
 
     for fig_i, fig_line in enumerate(fig_lines):
         # filename = fig_line.strip()[1:-1].split()[1]
-        m = re.findall(r"{\S*\.pdf}|.eps}|.png}$", fig_line)
-        filename = m[0][1:-1]
+        # previous version: m = re.findall(r"{\S*\.pdf}|.eps}|.png}$", fig_line)
+        m = re.findall(r"{(\S*(?:\.pdf|\.eps|\.png))}", fig_line)
+        filename = m[0]#[1:-1]
 
         this_fig_lines = [ (i, line) for i, line in enumerate(tex_lines) if filename in line and
                            ('input' in line or 'includegraphics' in line)]
@@ -463,12 +464,15 @@ def count_figures_words(detex_lines, tex_lines, opts):
             width = float(width)
             height = float(height)
         elif opts.figs == 'gs':
+            if filename[-4:] != '.eps':
+                raise ValueError('gs method only works with pdf and eps files, not %s' % filename[-4:])
             img_f = open(filename, 'r')
+            print(' '.join(['gs', '-q', '-dSAFER', '-dBATCH', '-sDEVICE=bbox', '-']))
             gs = subprocess.Popen(['gs', '-q', '-dSAFER', '-dBATCH', '-sDEVICE=bbox', '-'],
                                   stdin=img_f, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = gs.communicate()
             img_f.close()
-            bbox = err.split('\n')[0].split()
+            bbox = err.decode('utf-8').split('\n')[0].split()
             width = float(bbox[3])
             height = float(bbox[4])
         else:
