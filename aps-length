@@ -527,6 +527,8 @@ def process(tex_file, opts):
         main_text_words = count_main_text_words_wordcount(tex_lines, opts)
     else:
         raise ValueError('Unsupported method %s' % opts.method)
+    print('Main text:   %6d words' % main_text_words)
+    tex_lines = [line.split('%')[0] for line in tex_lines] # 
     eqn_words = count_equations_words(tex_lines)
     fig_words = count_figures_words(detex_lines, tex_lines, opts)
     table_words = count_tables_words(tex_lines)
